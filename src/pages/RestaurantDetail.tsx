@@ -2,7 +2,7 @@ import { useParams, useLocation } from "react-router-dom";
 import Star from "../components/Star";
 import { useState, useEffect } from "react";
 import { getDetailRestaurant } from "../api/restaurant-api";
-import { arrayUnique } from "../utils/array-utils";
+// import { arrayUnique } from "../utils/array-utils";
 
 
 const RestaurantDetail = () => {
