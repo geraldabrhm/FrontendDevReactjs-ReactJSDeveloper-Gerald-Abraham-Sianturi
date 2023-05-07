@@ -1,10 +1,21 @@
-import './App.css'
+import './App.css';
+import { Route, Routes } from 'react-router-dom';
+import Restaurants from './pages/Restaurants';
+import RestaurantDetail from './pages/RestaurantDetail';
+import RestaurantLayout from './components/RestaurantLayout';
 
 function App() {
-
   return (
     <>
-      <h1 className='bg-black text-white'>Ferguso</h1>
+      <RestaurantLayout/>
+      <Routes>
+        <Route path="/" element={<Restaurants />}/>
+        <Route path="/restaurant">
+          <Route index element={<Restaurants />}/>
+          <Route path=":id" element = {<RestaurantDetail />}/>
+        </Route>
+        <Route path="*" element={<div>Not Found</div>}/>
+      </Routes>
     </>
   )
 }
