@@ -11,10 +11,10 @@ const RestaurantDetail = () => {
     const [restaurantsPhotoList, setRestaurantsPhotoList] = useState<any>({});
     const [restaurantReview, setRestaurantReview] = useState<any>({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [idxImage, setIdxImage] = useState<number>(0);
     const location = useLocation();
     const restaurantName = location.state?.name;
     const restaurantRating = location.state?.rating;
-    const restaurantImage = location.state?.imageSrc;
 
     useEffect(() => {
         if(id != undefined) {
@@ -55,8 +55,33 @@ const RestaurantDetail = () => {
                     <Star starAmount={Math.floor(restaurantRating/2)}/>
                     <span className="text-sm text-[#888888]">{restaurantRating/2}</span>
                 </div>
-                <div className="min-h-[50vh]">
-                    <img src={restaurantImage} alt="restaurant-img" className="w-52 h-52 rounded-md" draggable={false}/>
+                <div className="min-h-[25vh]">
+                    {
+                        (isLoading == false && restaurantsPhotoList.length != 0) && 
+                            <div className="flex flex-row justify-between">
+                                <button onClick={() => {setIdxImage(idxImage - 1);}} className="p-2 hover:bg-[#888888] rounded-md">
+                                    {"<"}
+                                </button>
+                                <div className="flex flex-row justify-center h-full">
+                                    <img src={restaurantsPhotoList[(idxImage + restaurantsPhotoList.length) % restaurantsPhotoList.length].src} alt={restaurantName} className="object-fill rounded-md" draggable={false}/>
+                                </div>
+                                <button onClick={() => {setIdxImage(idxImage + 1)}} className="p-2 hover:bg-[#888888] rounded-md">
+                                    {">"}
+                                </button>
+                            </div>
+                    }
+                    {
+                        (isLoading == false && restaurantsPhotoList.length == 0) && 
+                            <div className='flex flex-row justify-center w-screen'>
+                                <h1>There is no photo posted by users</h1>
+                            </div>
+                    }
+                    {
+                        (isLoading == true) && 
+                            <div className='flex flex-row justify-center w-screen'>
+                                <h1>Loading...</h1>
+                            </div>
+                    }
                 </div>
                 <div className="min-h-[50vh] p-4">
                     {   
@@ -71,8 +96,8 @@ const RestaurantDetail = () => {
                                                 <Star starAmount={Math.floor(restaurantReview.ratingValue / 2)}/>
                                                 <span className="text-sm text-[#888888]">{restaurantReview.ratingValue / 2}/5</span>
                                             </div>
-                                            <span>{restaurantReview.review.reviewBody}</span>
-                                            <span>{restaurantReview.reviewer.firstName}</span>
+                                            <span className="italic">{restaurantReview.review.reviewBody}</span>
+                                            <span className="font-semibold">- {restaurantReview.reviewer.firstName} {restaurantReview.reviewer.lastName}</span>
                                             
                                         </div>
                                     </div>
@@ -87,30 +112,6 @@ const RestaurantDetail = () => {
                             ) : (
                                 <></>
                             )
-                    }
-                </div>
-                <div className="min-h-[50vh]">
-                    {
-                        (isLoading == false) ? (
-                            (restaurantsPhotoList.length != 0) ? (
-                                restaurantsPhotoList.map((elmt: any, idx: any) => {
-                                    <div>
-                                        <img key={idx} src={elmt.src} alt={restaurantName} className="w-52 h-52 rounded-md" draggable={false}/>
-                                        <div>
-                                            <p key={idx}>{elmt.src}</p>
-                                        </div>
-                                    </div>
-                                })
-                            ) : (
-                                <div className='flex flex-row justify-center w-screen'>
-                                    <h1>There is no photo posted by users</h1>
-                                </div>
-                            )
-                        ) : (
-                            <div className='flex flex-row justify-center w-screen'>
-                                <h1>Loading...</h1>
-                            </div>
-                        )
                     }
                 </div>
             </section>
