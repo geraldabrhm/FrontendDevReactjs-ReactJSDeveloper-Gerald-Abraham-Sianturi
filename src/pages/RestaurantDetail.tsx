@@ -1,16 +1,20 @@
 import { useParams, useLocation } from "react-router-dom";
 import Star from "../components/Star";
 import { useState, useEffect } from "react";
-import { getDetailRestaurant } from "../api/restaurant-api";
-// import { arrayUnique } from "../utils/array-utils";
+import { getDetailRestaurant, getReviewList } from "../api/restaurant-api";
+import { IMG_DEFAULT }from '../constants/placeholder';
+import ReviewList from "../components/ReviewList";
+import LoadingReview from "../components/LoadingReview";
 
 
 const RestaurantDetail = () => {
     const { id } = useParams();
 
     const [restaurantsPhotoList, setRestaurantsPhotoList] = useState<any>({});
-    const [restaurantReview, setRestaurantReview] = useState<any>({});
+    const [restaurantBestReview, setRestaurantBestReview] = useState<any>({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [reviewList, setReviewList] = useState<any>([]);
+    const [isLoadingReviewList, setIsLoadingReviewList] = useState<boolean>(true);
     const [idxImage, setIdxImage] = useState<number>(0);
     const location = useLocation();
     const restaurantName = location.state?.name;
@@ -19,16 +23,9 @@ const RestaurantDetail = () => {
     useEffect(() => {
         if(id != undefined) {
             loadRestaurantDetails(id.toString());
+            loadReviewList(id.toString());
         }
     }, []);
-
-    useEffect(() => {
-        console.info(restaurantsPhotoList); // HERE: A
-    }, [restaurantsPhotoList])
-
-    useEffect(() => {
-        console.info(restaurantReview);
-    }, [restaurantReview])
 
     const loadRestaurantDetails = (id: string) => {
         setIsLoading(true);
@@ -37,13 +34,28 @@ const RestaurantDetail = () => {
             return res.data;
         }).then((data: any) => {
             setRestaurantsPhotoList(data.restaurant.photos);
-            setRestaurantReview(data.restaurant.bestRating);
-            console.info(data.restaurant.bestRating);
-            // setRestaurantsPhotoList(arrayUnique(data.restaurant.photos.concat([...restaurantsPhotoList])));
+            setRestaurantBestReview(data.restaurant.bestRating);
+            // console.info(data.restaurant.bestRating); // ! Debug
         }).catch((err: any) => {
             console.error(err.message);
         }).finally(() => {
             setIsLoading(false);
+        })
+    }
+
+    const loadReviewList = (id: string) => {
+        setIsLoadingReviewList(true);
+        const responseRestaurant = getReviewList(id);
+        responseRestaurant.then((res: any) => {
+            return res.data;
+        }).then((data: any) => {
+            console.info(data.restaurantRatingsList.ratings);
+            setReviewList(data.restaurantRatingsList.ratings);
+            // setReviewList("");
+        }).catch((err: any) => {
+            console.error(err.message);
+        }).finally(() => {
+            setIsLoadingReviewList(false);
         })
     }
 
@@ -55,7 +67,7 @@ const RestaurantDetail = () => {
                     <Star starAmount={Math.floor(restaurantRating/2)}/>
                     <span className="text-sm text-[#888888]">{restaurantRating/2}</span>
                 </div>
-                <div className="min-h-[25vh]">
+                <div className="min-h-[25vh] bg-[#f8f4f1] rounded-md">
                     {
                         (isLoading == false && restaurantsPhotoList.length != 0) && 
                             <div className="flex flex-row justify-between">
@@ -78,39 +90,50 @@ const RestaurantDetail = () => {
                     }
                     {
                         (isLoading == true) && 
-                            <div className='flex flex-row justify-center w-screen'>
-                                <h1>Loading...</h1>
+                        <div className="rounded-md p-4 max-w-sm w-full mx-auto">
+                            <div className="animate-pulse flex space-x-4">
+                                <div className="flex-1 space-y-6 py-1">
+                                    <div className="h-28 bg-slate-700 rounded"></div>
+                                </div>
                             </div>
+                        </div>
                     }
                 </div>
-                <div className="min-h-[50vh] p-4">
+                {/* <div className="min-h-fit p-4">
+                    <h2 className="font-bold text-lg">Review with best rating</h2>
                     {   
                         (isLoading == false) ?
-                            (Object.keys(restaurantReview).length != 0) ? (
-                                <div className="">
-                                    <h2 className="font-bold text-lg">List of Reviews</h2>
-                                    <div className="flex flex-row justify-start gap-2 bg-[#fde0e0] rounded-md p-4">
-                                        <img src={restaurantReview.reviewer.avatar} alt="reviewer-vatar" className="w-28 h-28 rounded-md" draggable={false}/>
-                                        <div className="flex flex-col justify-between">
-                                            <div className="flex flex-row justify-start gap-2">
-                                                <Star starAmount={Math.floor(restaurantReview.ratingValue / 2)}/>
-                                                <span className="text-sm text-[#888888]">{restaurantReview.ratingValue / 2}/5</span>
-                                            </div>
-                                            <span className="italic">{restaurantReview.review.reviewBody}</span>
-                                            <span className="font-semibold">- {restaurantReview.reviewer.firstName} {restaurantReview.reviewer.lastName}</span>
-                                            
-                                        </div>
-                                    </div>
-                                </div>
-
+                            (Object.keys(restaurantBestReview).length != 0) ? (
+                                <ReviewList avatarImg={restaurantBestReview.reviewer.avatar} ratingScale10={restaurantBestReview.ratingValue} reviewText={restaurantBestReview.review.reviewBody} reviewerfirstName={restaurantBestReview.reviewer.firstName} reviewerLastName={restaurantBestReview.reviewer.reviewerLastName} />
     
                             ) : (
                                 <div className='flex flex-row justify-center w-screen'>
-                                    <h2>List of Review</h2>
+                                    <h2>Review with best rating</h2>
                                     <h1>There is no review by users</h1>
                                 </div>
                             ) : (
-                                <></>
+                                <LoadingReview />
+                            )
+                    }
+                </div> */}
+                <div className="min-h-fit p-4">
+                    <h2 className="font-bold text-lg">List of Reviews</h2>
+                    {   
+                        (isLoadingReviewList == false) ?
+                            (reviewList.length != 0) ? (
+                                reviewList.map((review: any) => {
+                                    return (
+                                        <ReviewList key={review.id} avatarImg={review.reviewer.avatar} ratingScale10={review.ratingValue} reviewText={review.review.reviewBody} reviewerfirstName={review.reviewer.firstName} reviewerLastName={review.reviewer.reviewerLastName} />
+                                    )
+                                })
+    
+                            ) : (
+                                <div className='flex flex-row justify-center w-screen'>
+                                    <h2>List of Reviews</h2>
+                                    <h1>There is no review by users</h1>
+                                </div>
+                            ) : (
+                                <LoadingReview />
                             )
                     }
                 </div>

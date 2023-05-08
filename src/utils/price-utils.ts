@@ -22,3 +22,16 @@ export const getPriceSymbol = (price: number) => {
 export const getPriceKeys = () => {
     return Object.keys(PRICE_RANGE);
 }
+
+export const filterByPriceCategory = (arr: any, priceCategory: string) => {
+    return arr.filter((elmt: any) => {
+        console.info(`${elmt.name} - ${elmt.priceRange} - ${getPriceCategory(elmt.priceRange)} - ${getPriceCategory(elmt.priceRange) == priceCategory}`);
+        return getPriceCategory(elmt.priceRange) == priceCategory;
+    })
+}
+
+export const filterByOpenNow = (arr: any) => {
+    return arr.filter((elmt: any) => {
+        return elmt.isInsider == true;
+    })
+}

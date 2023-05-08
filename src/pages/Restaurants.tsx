@@ -3,69 +3,56 @@ import { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import RestaurantCard from '../components/RestaurantCard';
 import { getAllRestaurants } from '../api/restaurant-api';
-import { getPriceCategory, getPriceKeys } from '../utils/price-utils';
+import { getPriceKeys, filterByOpenNow, filterByPriceCategory } from '../utils/price-utils';
 import { arrayUnique } from '../utils/array-utils';
 import { ALL } from '../constants/price-range';
+import LoadingBox from '../components/LoadingBox';
 
 const Restaurants = () => {
     const [restaurantsList, setRestaurantsList] = useState<any>([]);
+    const [restaurantDisplayed, setRestaurantDisplayed] = useState<any>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isFilterByOpenNow, setIsFilterByOpenNow] = useState<boolean>(false);
-    const [pricePicked, setPricePicked] = useState<string>("");
+    const [pricePicked, setPricePicked] = useState<string>(ALL);
     // const [restaurantCategoryPicked, setRestaurantCategoryPicked] = useState<string>("");
     const [currentPage, setCurrentPage] = useState<string>("1");
 
-    let checkboxElmt: any;
-    let priceSelectElmt: any;
+    let clearAllElmt: any;
 
     useEffect(() => {
-        setIsLoading(true);
+        console.info("Load data for the first time");
+        const checkboxElmt = document.getElementById("open-now") as HTMLInputElement;
+        const priceSelectElmt = document.getElementById("price-select") as HTMLSelectElement;
+        
+        clearAllElmt = document.querySelector("#clear-all");
+
+        clearAllElmt.addEventListener("click", () => {
+            checkboxElmt.checked = false;
+            priceSelectElmt.value = ALL;
+            setIsFilterByOpenNow(false);
+            setPricePicked(ALL);
+        });        
     }, [])
 
     useEffect(() => {
-        // Handle checkbox
-        const checkboxHandler = () => {
-            setIsFilterByOpenNow(!isFilterByOpenNow);
-        }
-
-        checkboxElmt = document.querySelector('#open-now') as HTMLInputElement;
-        if(checkboxElmt != null) {
-            console.info(checkboxElmt);
-            checkboxElmt.addEventListener('change', checkboxHandler)
-        } else {
-            console.error("checkboxElmt is null");
-        }
-
-        // Handle price select
-        const priceHandler = (elmt: any) => {
-            setPricePicked(elmt.value.toString());
-        }
-        
-        priceSelectElmt = document.querySelector('#price-select') as HTMLSelectElement;
-
-        if(priceSelectElmt != null) {
-            priceSelectElmt.addEventListener('change', () => priceHandler(priceSelectElmt))
-        } else {
-            console.error("priceSelectElmt is null");
-        }
-        return () => {
-            if(checkboxElmt != null) {
-                checkboxElmt.removeEventListener('change', checkboxHandler);
-            }
-            if(priceSelectElmt != null) {
-                priceSelectElmt.removeEventListener('change', () => priceHandler(priceSelectElmt));
-            }
-        }
-    }, [isFilterByOpenNow, pricePicked])
+        setFilteredData();
+    }, [restaurantsList])
 
     useEffect(() => {
-        loadRestaurantData(currentPage);
-    }, [isFilterByOpenNow, pricePicked, currentPage])
-    // }, [currentPage])
+        console.info("Restaurant displayed changing: This is restaurant displayed:");
+        console.info(restaurantDisplayed);
+    }, [restaurantDisplayed])
 
-    // useEffect(() => {
-    //     setIsLoading(false);
-    // }, [restaurantsList])
+    useEffect(() => {
+        console.info("Current page changing");
+        loadRestaurantData(currentPage);
+        setFilteredData();
+    }, [currentPage])
+
+    useEffect(() => {
+        console.info("Filter is changing");
+        setFilteredData();
+    }, [isFilterByOpenNow, pricePicked])
 
     const  loadRestaurantData = async (pageNumber: string) => {
         setIsLoading(true);
@@ -75,7 +62,7 @@ const Restaurants = () => {
         }).then((data: any) => {
             if(data != null) {
                 if(currentPage == "1") {
-                    console.info("Load data for the first time");
+                    console.info("Loading restaurant first page");
                     console.info(data);
                     flushSync(() => setRestaurantsList(data));
                 } else {
@@ -84,20 +71,6 @@ const Restaurants = () => {
                     console.info(joinedListUnique);
                     flushSync(() => setRestaurantsList(joinedListUnique));
                 }
-                
-                if(checkboxElmt.checked) {
-                    const filteredData = filterByOpenNow(restaurantsList);
-                    console.info("Filtered data with checkbox")
-                    console.info(filteredData);
-                    flushSync(() => setRestaurantsList(arrayUnique(filteredData)));
-                }
-            
-                if(priceSelectElmt.value != ALL) {
-                    const filteredData = filterByPriceCategory(restaurantsList, priceSelectElmt.value);
-                    console.info("Filtered data with price select")
-                    console.info(filteredData);
-                    flushSync(() => setRestaurantsList(arrayUnique(filteredData)));
-                };
             }
         }).catch((err: any) => {
             console.error(err.message);
@@ -106,16 +79,27 @@ const Restaurants = () => {
         });
     }
 
-    const filterByOpenNow = (arr: any) => {
-        return arr.filter((elmt: any) => {
-            return elmt.isInsider == true;
-        })
-    }
+    const setFilteredData = () => {
+        console.info("=== DO FILTERING ===")
+        console.info("Restaurant list data");
+        console.info(restaurantsList);
 
-    const filterByPriceCategory = (arr: any, priceCategory: string) => {
-        return arr.filter((elmt: any) => {
-            return getPriceCategory(elmt.priceRange) == priceCategory;
-        })
+        setRestaurantDisplayed(restaurantsList);
+        
+        let filteredData = restaurantsList;
+        if(isFilterByOpenNow == true) {
+            console.info("Only show open now restaurant");
+            filteredData = filterByOpenNow(restaurantsList);
+            setRestaurantDisplayed(filteredData);
+        }
+
+        if(pricePicked != ALL) {
+            console.info("only show restaurant with price category " + pricePicked);
+            filteredData = filterByPriceCategory(filteredData, pricePicked);
+            setRestaurantDisplayed(filteredData);
+        }
+        console.info("Restaurant filtered data");
+        console.info(filteredData);
     }
 
     const handleLoadMore = () => {
@@ -132,11 +116,15 @@ const Restaurants = () => {
                 <form className='flex flex-row justify-start gap-3 items-center'>
                     <label>Filter by: </label>
                     <div className="border-b p-1">
-                        <input type="checkbox" id="open-now" name="open-now"/>
+                        <input type="checkbox" id="open-now" name="open-now" onChange={(e) => {
+                            setIsFilterByOpenNow(e.target.checked);
+                        }}/>
                         <span className='p-1'>Open Now</span>
                     </div>
                     <div className="border-b p-1">
-                        <select id="price-select" className='p-1 bg-white'>
+                        <select id="price-select" className='p-1 bg-white' onChange={(e) => {
+                            setPricePicked(e.target.value);
+                        }}>
                             <option value={ALL}>All</option>
                             {
                                 getPriceKeys().map((priceKey: string) => {
@@ -154,16 +142,7 @@ const Restaurants = () => {
                         </select>
                     </div> */}
                 </form>
-                <button onClick={() => {
-                    if(checkboxElmt != undefined) {
-                        checkboxElmt.checked = false;
-                        setIsFilterByOpenNow(false);
-                    }
-                    if(priceSelectElmt != undefined) {
-                        priceSelectElmt.value = ALL;
-                        setPricePicked(ALL);
-                    }
-                }}>
+                <button id="clear-all">
                     Clear all
                 </button>
             </section>
@@ -171,8 +150,8 @@ const Restaurants = () => {
             <section id="restaurants-list" className="grid md:grid-cols-3 lg:grid-cols-4 gap-8 p-4 justify-between">
                 {
                     isLoading == false ? (
-                        restaurantsList.length != 0 ? (
-                            restaurantsList.map((restaurant: any) => {
+                        restaurantDisplayed.length != 0 ? (
+                            restaurantDisplayed.map((restaurant: any) => {
                                 return (
                                     <RestaurantCard key={restaurant.id} id={restaurant.id} imageSrc={restaurant.mainPhotoSrc} name={restaurant.name} rating={restaurant.aggregateRatings.thefork.ratingValue} category={restaurant.servesCuisine} priceRange={restaurant.priceRange} isOpen={restaurant.isInsider}/>
                                 )
@@ -183,14 +162,21 @@ const Restaurants = () => {
                             </div>
                         )
                     ) : (
-                        <div className='flex flex-row justify-center w-screen'>
-                            <h1>Loading...</h1>
-                        </div>
+                        <>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                            <LoadingBox/>
+                        </>
                     )
 
                 }
             </section>
-            { (isLoading == false && restaurantsList.length != 0) &&
+            { (isLoading == false && restaurantDisplayed.length != 0) &&
                 <div className='flex flex-row justify-center w-screen'>
                     <button className="bg-white text-[#0a275c] px-4 py-2 mb-2 rounded-md w-1/2 border-[#0a275c] border-2" onClick={() => handleLoadMore()}>Load More</button>
                 </div>

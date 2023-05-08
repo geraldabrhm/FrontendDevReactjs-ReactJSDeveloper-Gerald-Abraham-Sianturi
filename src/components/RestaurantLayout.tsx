@@ -7,7 +7,7 @@ const RestaurantLayout = () => {
                 <ul>
                     <li>
                         <Link to="/restaurant">
-                            <h1 className="p-2">Restaurant</h1>
+                            <span className="font-bold text-xl text-black p-2 hover:bg-black hover:text-white w-fit-content">Restaurant</span>
                         </Link>
                     </li>
                 </ul>
