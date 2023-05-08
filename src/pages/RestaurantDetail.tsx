@@ -2,7 +2,6 @@ import { useParams, useLocation } from "react-router-dom";
 import Star from "../components/Star";
 import { useState, useEffect } from "react";
 import { getDetailRestaurant, getReviewList } from "../api/restaurant-api";
-import { IMG_DEFAULT }from '../constants/placeholder';
 import ReviewList from "../components/ReviewList";
 import LoadingReview from "../components/LoadingReview";
 
@@ -11,7 +10,7 @@ const RestaurantDetail = () => {
     const { id } = useParams();
 
     const [restaurantsPhotoList, setRestaurantsPhotoList] = useState<any>({});
-    const [restaurantBestReview, setRestaurantBestReview] = useState<any>({});
+    // const [restaurantBestReview, setRestaurantBestReview] = useState<any>({});
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [reviewList, setReviewList] = useState<any>([]);
     const [isLoadingReviewList, setIsLoadingReviewList] = useState<boolean>(true);
@@ -34,7 +33,7 @@ const RestaurantDetail = () => {
             return res.data;
         }).then((data: any) => {
             setRestaurantsPhotoList(data.restaurant.photos);
-            setRestaurantBestReview(data.restaurant.bestRating);
+            // setRestaurantBestReview(data.restaurant.bestRating);
             // console.info(data.restaurant.bestRating); // ! Debug
         }).catch((err: any) => {
             console.error(err.message);
